@@ -1,8 +1,15 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package CuacaFrame;
+
+import com.app.cuaca.DatabaseConnection;
+import com.app.cuaca.WeatherService;
+import java.sql.Connection;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import org.json.JSONObject;
 
 /**
  *
@@ -15,7 +22,57 @@ public class CuacaFrame extends javax.swing.JFrame {
      */
     public CuacaFrame() {
         initComponents();
+        DatabaseConnection.setupDatabase(); 
+        muatKotaFavorit();
+        
+        cmbKota.addItemListener(e -> {
+        if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+            Object selected = cmbKota.getSelectedItem();
+            if (selected != null) {
+                txtKotaBaru.setText(selected.toString());
+            }
+        }
+    });
     }
+
+    
+    private void muatKotaFavorit() {
+        try (Connection conn = DatabaseConnection.getConnection();
+         java.sql.Statement stmt = conn.createStatement();
+         java.sql.ResultSet rs = stmt.executeQuery("SELECT nama_kota FROM favorit")) {
+
+        // Hapus semua item agar tidak dobel saat refresh
+        cmbKota.removeAllItems();
+
+        while (rs.next()) {
+            cmbKota.addItem(rs.getString("nama_kota"));
+        }
+
+        // ❌ Tidak pilih otomatis, biarkan kosong dulu
+        cmbKota.setSelectedIndex(-1);
+        txtKotaBaru.setText("");
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    }
+
+        private void tampilkanIcon(String kondisi) {
+    String path = "/com/app/cuaca/icons/";
+    kondisi = kondisi.toLowerCase();
+
+    if (kondisi.contains("rain")) {
+        lblIcon.setIcon(new ImageIcon(getClass().getResource(path + "rain.png")));
+    } else if (kondisi.contains("cloud")) {
+        lblIcon.setIcon(new ImageIcon(getClass().getResource(path + "cloud.png")));
+    } else if (kondisi.contains("storm") || kondisi.contains("thunder")) {
+        lblIcon.setIcon(new ImageIcon(getClass().getResource(path + "storm.png")));
+    } else if (kondisi.contains("snow")) {
+        lblIcon.setIcon(new ImageIcon(getClass().getResource(path + "snow.png")));
+    } else {
+        lblIcon.setIcon(new ImageIcon(getClass().getResource(path + "sun.png")));
+    }
+}
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -26,21 +83,303 @@ public class CuacaFrame extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel1 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+        jPanel2 = new javax.swing.JPanel();
+        cmbKota = new javax.swing.JComboBox<>();
+        btnCekCuaca = new javax.swing.JButton();
+        btnSimpanFavorit = new javax.swing.JButton();
+        btnExportCSV = new javax.swing.JButton();
+        jButton1 = new javax.swing.JButton();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        tblRiwayat = new javax.swing.JTable();
+        txtKotaBaru = new javax.swing.JTextField();
+        btnHapusFavorit = new javax.swing.JButton();
+        jPanel3 = new javax.swing.JPanel();
+        lblCuaca = new javax.swing.JLabel();
+        lblIcon = new javax.swing.JLabel();
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel1.setText("Aplikasi Cek Cuaca");
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(292, 292, 292)
+                .addComponent(jLabel1)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addContainerGap(44, Short.MAX_VALUE)
+                .addComponent(jLabel1)
+                .addGap(40, 40, 40))
+        );
+
+        btnCekCuaca.setText("Cek");
+        btnCekCuaca.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCekCuacaActionPerformed(evt);
+            }
+        });
+
+        btnSimpanFavorit.setText("Favorit");
+        btnSimpanFavorit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSimpanFavoritActionPerformed(evt);
+            }
+        });
+
+        btnExportCSV.setText("Export");
+        btnExportCSV.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnExportCSVActionPerformed(evt);
+            }
+        });
+
+        jButton1.setText("Load");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
+        tblRiwayat.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Kota", "Suhu", "Kondisi", "Deskripsi"
+            }
+        ));
+        jScrollPane1.setViewportView(tblRiwayat);
+
+        btnHapusFavorit.setText("Hapus");
+        btnHapusFavorit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusFavoritActionPerformed(evt);
+            }
+        });
+
+        jPanel3.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(48, 48, 48)
+                .addComponent(lblCuaca, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(47, 47, 47)
+                .addComponent(lblIcon, javax.swing.GroupLayout.PREFERRED_SIZE, 175, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(lblIcon, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lblCuaca, javax.swing.GroupLayout.PREFERRED_SIZE, 132, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(15, Short.MAX_VALUE))
+        );
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 804, Short.MAX_VALUE))
+                        .addContainerGap())
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(jButton1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnExportCSV)
+                        .addContainerGap())))
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(16, 16, 16)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addComponent(btnCekCuaca)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnHapusFavorit)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(btnSimpanFavorit))
+                    .addComponent(txtKotaBaru)
+                    .addComponent(cmbKota, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(cmbKota, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(9, 9, 9)
+                .addComponent(txtKotaBaru, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnHapusFavorit)
+                    .addComponent(btnCekCuaca)
+                    .addComponent(btnSimpanFavorit))
+                .addGap(25, 25, 25)
+                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(36, 36, 36)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 293, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton1)
+                    .addComponent(btnExportCSV))
+                .addContainerGap())
+        );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnCekCuacaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCekCuacaActionPerformed
+    String kota = txtKotaBaru.getText().trim();
+    if (kota.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Masukkan atau pilih kota terlebih dahulu!");
+        return;
+    }
+
+    JSONObject data = WeatherService.getWeather(kota);
+    if (data != null) {
+        JSONObject main = data.getJSONObject("main");
+        double suhu = main.getDouble("temp");
+
+        JSONObject weather = data.getJSONArray("weather").getJSONObject(0);
+        String kondisiUtama = weather.getString("main");
+        String deskripsi = weather.getString("description");
+
+        lblCuaca.setText("<html><b>" + kota + "</b><br>Kondisi: "
+                         + kondisiUtama + "<br>Deskripsi: "
+                         + deskripsi + "<br>Suhu: " + suhu + "°C</html>");
+
+        tampilkanIcon(kondisiUtama);
+
+        // Tambah ke tabel
+        DefaultTableModel model = (DefaultTableModel) tblRiwayat.getModel();
+        model.addRow(new Object[]{kota, suhu + "°C", kondisiUtama, deskripsi});
+    } else {
+        lblCuaca.setText("Gagal mengambil data cuaca!");
+    }
+    }//GEN-LAST:event_btnCekCuacaActionPerformed
+
+    private void btnSimpanFavoritActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanFavoritActionPerformed
+    String kotaBaru = txtKotaBaru.getText().trim();
+       if (kotaBaru.isEmpty()) {
+           JOptionPane.showMessageDialog(this, "Masukkan nama kota terlebih dahulu!");
+           return;
+       }
+
+       try (Connection conn = DatabaseConnection.getConnection();
+            java.sql.PreparedStatement ps = conn.prepareStatement(
+               "INSERT OR IGNORE INTO favorit (nama_kota) VALUES (?)")) {
+
+           ps.setString(1, kotaBaru);
+           ps.executeUpdate();
+
+           cmbKota.addItem(kotaBaru);
+           txtKotaBaru.setText("");
+           JOptionPane.showMessageDialog(this, "Kota '" + kotaBaru + "' ditambahkan ke favorit!");
+       } catch (Exception e) {
+           e.printStackTrace();
+           JOptionPane.showMessageDialog(this, "Gagal menyimpan kota favorit!");
+       }
+    }//GEN-LAST:event_btnSimpanFavoritActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+        DefaultTableModel model = (DefaultTableModel) tblRiwayat.getModel();
+    model.setRowCount(0);
+    try (BufferedReader br = new BufferedReader(new FileReader("riwayat_cuaca.csv"))) {
+        String line;
+        while ((line = br.readLine()) != null) {
+            model.addRow(line.split(","));
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void btnExportCSVActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportCSVActionPerformed
+        // TODO add your handling code here:
+         try (FileWriter fw = new FileWriter("riwayat_cuaca.csv")) {
+        for (int i = 0; i < tblRiwayat.getRowCount(); i++) {
+            for (int j = 0; j < tblRiwayat.getColumnCount(); j++) {
+                fw.write(tblRiwayat.getValueAt(i, j).toString() + ",");
+            }
+            fw.write("\n");
+        }
+        JOptionPane.showMessageDialog(this, "Data berhasil disimpan ke CSV!");
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    }//GEN-LAST:event_btnExportCSVActionPerformed
+
+    private void btnHapusFavoritActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusFavoritActionPerformed
+        // TODO add your handling code here:
+         Object selected = cmbKota.getSelectedItem();
+
+    if (selected == null) {
+        JOptionPane.showMessageDialog(this, "Pilih kota yang ingin dihapus dari favorit!");
+        return;
+    }
+
+    String kota = selected.toString();
+    int konfirmasi = JOptionPane.showConfirmDialog(
+            this,
+            "Apakah kamu yakin ingin menghapus kota '" + kota + "' dari favorit?",
+            "Konfirmasi Hapus",
+            JOptionPane.YES_NO_OPTION
+    );
+
+    if (konfirmasi == JOptionPane.YES_OPTION) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(
+                     "DELETE FROM favorit WHERE nama_kota = ?")) {
+            
+            ps.setString(1, kota);
+            int rows = ps.executeUpdate();
+
+            if (rows > 0) {
+                cmbKota.removeItem(selected);
+                txtKotaBaru.setText("");
+                JOptionPane.showMessageDialog(this, "Kota '" + kota + "' berhasil dihapus dari favorit!");
+            } else {
+                JOptionPane.showMessageDialog(this, "Kota tidak ditemukan di database!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Terjadi kesalahan saat menghapus kota.");
+        }
+    }
+    }//GEN-LAST:event_btnHapusFavoritActionPerformed
 
     /**
      * @param args the command line arguments
@@ -78,5 +417,21 @@ public class CuacaFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnCekCuaca;
+    private javax.swing.JButton btnExportCSV;
+    private javax.swing.JButton btnHapusFavorit;
+    private javax.swing.JButton btnSimpanFavorit;
+    private javax.swing.JComboBox<String> cmbKota;
+    private javax.swing.JButton jButton1;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JLabel lblCuaca;
+    private javax.swing.JLabel lblIcon;
+    private javax.swing.JTable tblRiwayat;
+    private javax.swing.JTextField txtKotaBaru;
     // End of variables declaration//GEN-END:variables
+
 }
